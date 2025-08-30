@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jornada Fullstack - Mapa Mental Interativo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1 class="game-title">🎮 Jornada Fullstack Developer</h1>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+                <span class="progress-text" id="progressText">0%</span>
+            </div>
+            <div class="stats">
+                <span class="level">Nível: <span id="currentLevel">1</span></span>
+                <span class="coins">Moedas: <span id="coins">0</span> 🪙</span>
+            </div>
+        </header>
+
+        <main class="game-world">
+            <div class="world-map" id="worldMap">
+                <!-- Fases serão geradas dinamicamente -->
+            </div>
+        </main>
+
+        <div class="modal" id="stageModal">
+            <div class="modal-content">
+                <span class="close" id="closeModal">&times;</span>
+                <h2 id="modalTitle"></h2>
+                <div id="modalContent"></div>
+                <div class="modal-actions">
+                    <button class="btn-complete" id="completeStage">Completar Fase 🏆</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="achievement-popup" id="achievementPopup">
+            <div class="achievement-content">
+                <h3>🎉 Parabéns!</h3>
+                <p id="achievementText"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
