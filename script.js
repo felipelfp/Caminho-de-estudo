@@ -2,6 +2,7 @@ class FullstackRoadmap {
     constructor() {
         this.currentStage = 0;
         this.completedStages = new Set();
+        this.completedSkills = new Set(); 
         this.totalStages = 0;
         this.coins = 0;
         this.level = 1;
@@ -16,7 +17,6 @@ class FullstackRoadmap {
                     "Conhecimento em Windows e Linux",
                     "Pacote Office (Word, Excel, PowerPoint)",
                     "Manutenção básica de hardware",
-                  
                     "Protocolos TCP/IP básicos",
                     "Noções de segurança da informação"
                 ],
@@ -151,10 +151,9 @@ class FullstackRoadmap {
                 percentage: 85,
                 coins: 250
             },
-
-{
+            {
                 id: 10,
-                title: "Ferramentas ",
+                title: "Ferramentas",
                 icon: "🏗️",
                 description: "Conhecimento em ligaguens de baixo nivel",
                 skills: [
@@ -163,12 +162,10 @@ class FullstackRoadmap {
                     "C#",
                     "GO",
                     "Java"
-
                 ],
                 percentage: 95,
                 coins: 300
             },
-
             {
                 id: 11,
                 title: "Frameworks Avançados",
@@ -186,9 +183,6 @@ class FullstackRoadmap {
                 percentage: 95,
                 coins: 300
             },
-
-            
-
             {
                 id: 12,
                 title: "Desenvolvedor Fullstack",
@@ -201,7 +195,6 @@ class FullstackRoadmap {
                     "Security best practices",
                     "Code review e mentoria",
                     "Continuous learning",
-
                 ],
                 percentage: 100,
                 coins: 500
@@ -234,9 +227,13 @@ class FullstackRoadmap {
         stageDiv.className = 'stage';
         stageDiv.dataset.stageId = stage.id;
 
-        // Determinar status da fase
+        
         const isCompleted = this.completedStages.has(stage.id);
         const isLocked = index > this.currentStage;
+        const completedSkillsCount = stage.skills.filter((skill, i) =>
+            this.completedSkills.has(`${stage.id}-${i}`)
+        ).length;
+        const stageProgress = (completedSkillsCount / stage.skills.length) * 100;
 
         if (isCompleted) {
             stageDiv.classList.add('completed');
@@ -263,7 +260,7 @@ class FullstackRoadmap {
                 ${stage.skills.length > 3 ? `<li>+${stage.skills.length - 3} mais...</li>` : ''}
             </ul>
             <div class="stage-progress">
-                <div class="stage-progress-fill" style="width: ${isCompleted ? 100 : 0}%"></div>
+                <div class="stage-progress-fill" style="width: ${isCompleted ? 100 : stageProgress}%"></div>
             </div>
             <div class="stage-status ${statusClass}">${statusText}</div>
         `;
@@ -284,6 +281,9 @@ class FullstackRoadmap {
         modalTitle.textContent = `${stage.icon} ${stage.title}`;
 
         const isCompleted = this.completedStages.has(stage.id);
+        const isAllSkillsCompleted = stage.skills.every((skill, i) =>
+            this.completedSkills.has(`${stage.id}-${i}`)
+        );
 
         modalContent.innerHTML = `
             <p style="margin-bottom: 20px; font-size: 1.1rem; color: #333;">
@@ -293,11 +293,15 @@ class FullstackRoadmap {
                 🎯 Habilidades para dominar:
             </h4>
             <ul style="list-style: none; margin-bottom: 20px;">
-                ${stage.skills.map(skill => `
-                    <li style="background: #f8f9fa; margin: 8px 0; padding: 12px; border-radius: 8px; border-left: 4px solid #4ECDC4;">
-                        ${skill}
-                    </li>
-                `).join('')}
+                ${stage.skills.map((skill, i) => {
+                    const skillId = `${stage.id}-${i}`;
+                    const isSkillCompleted = this.completedSkills.has(skillId);
+                    return `
+                        <li class="skill-item ${isSkillCompleted ? 'completed-skill' : ''}" data-skill-id="${skillId}">
+                            ${isSkillCompleted ? '✅' : '⬜'} ${skill}
+                        </li>
+                    `;
+                }).join('')}
             </ul>
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; text-align: center;">
                 <strong>Recompensa: ${stage.coins} moedas 🪙</strong><br>
@@ -306,10 +310,18 @@ class FullstackRoadmap {
         `;
 
         completeBtn.textContent = isCompleted ? 'Já Concluída ✅' : 'Completar Fase 🏆';
-        completeBtn.disabled = isCompleted;
+        completeBtn.disabled = !isAllSkillsCompleted || isCompleted;
+
+
+        modalContent.querySelectorAll('.skill-item').forEach(skillItem => {
+            skillItem.addEventListener('click', (event) => {
+                const skillId = event.currentTarget.dataset.skillId;
+                this.completeSkill(skillId);
+            });
+        });
 
         completeBtn.onclick = () => {
-            if (!isCompleted) {
+            if (!isCompleted && isAllSkillsCompleted) {
                 this.completeStage(stage.id);
                 modal.style.display = 'none';
             }
@@ -318,30 +330,48 @@ class FullstackRoadmap {
         modal.style.display = 'block';
     }
 
+    completeSkill(skillId) {
+        if (this.completedSkills.has(skillId)) return;
+
+        this.completedSkills.add(skillId);
+        this.saveProgress();
+        this.updateProgress();
+        this.renderStages();
+
+        const [stageId, skillIndex] = skillId.split('-').map(Number);
+        const stage = this.stages.find(s => s.id === stageId);
+        const completedSkillsCount = stage.skills.filter((skill, i) =>
+            this.completedSkills.has(`${stage.id}-${i}`)
+        ).length;
+
+        
+        if (completedSkillsCount === stage.skills.length) {
+             const modal = document.getElementById('stageModal');
+             const completeBtn = document.getElementById('completeStage');
+             completeBtn.disabled = false;
+             modal.querySelector('.stage-status').textContent = 'Pronta para Completar!';
+        }
+    }
+
     completeStage(stageId) {
         if (this.completedStages.has(stageId)) return;
 
         this.completedStages.add(stageId);
         const stage = this.stages.find(s => s.id === stageId);
 
-        // Adicionar moedas e atualizar nível
         this.coins += stage.coins;
         this.level = Math.floor(this.coins / 100) + 1;
 
-        // Avançar para próxima fase se necessário
         if (stageId === this.currentStage + 1) {
             this.currentStage = stageId;
         }
 
-        // Mostrar achievement
         this.showAchievement(`Fase ${stageId} concluída! +${stage.coins} moedas`);
 
-        // Atualizar UI
         this.updateProgress();
         this.renderStages();
         this.saveProgress();
 
-        // Verificar se completou tudo
         if (this.completedStages.size === this.totalStages) {
             setTimeout(() => {
                 this.showAchievement('🎉 Parabéns! Você é um Desenvolvedor Fullstack! 🎉');
@@ -350,7 +380,16 @@ class FullstackRoadmap {
     }
 
     updateProgress() {
-        const progressPercentage = this.calculateTotalProgress();
+        let totalCompletedPercentage = 0;
+        this.stages.forEach(stage => {
+            const completedSkillsCount = stage.skills.filter((skill, i) =>
+                this.completedSkills.has(`${stage.id}-${i}`)
+            ).length;
+            const stageProgress = (completedSkillsCount / stage.skills.length) * stage.percentage;
+            totalCompletedPercentage += stageProgress;
+        });
+
+        const progressPercentage = totalCompletedPercentage;
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         const currentLevelEl = document.getElementById('currentLevel');
@@ -363,14 +402,8 @@ class FullstackRoadmap {
     }
 
     calculateTotalProgress() {
-        let totalProgress = 0;
-        this.completedStages.forEach(stageId => {
-            const stage = this.stages.find(s => s.id === stageId);
-            if (stage) {
-                totalProgress += stage.percentage;
-            }
-        });
-        return Math.min(totalProgress, 100);
+       
+        return 0;
     }
 
     showAchievement(text) {
@@ -399,7 +432,6 @@ class FullstackRoadmap {
             }
         };
 
-        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 modal.style.display = 'none';
@@ -411,6 +443,7 @@ class FullstackRoadmap {
         const progress = {
             currentStage: this.currentStage,
             completedStages: Array.from(this.completedStages),
+            completedSkills: Array.from(this.completedSkills), 
             coins: this.coins,
             level: this.level
         };
@@ -423,6 +456,7 @@ class FullstackRoadmap {
             const progress = JSON.parse(saved);
             this.currentStage = progress.currentStage || 0;
             this.completedStages = new Set(progress.completedStages || []);
+            this.completedSkills = new Set(progress.completedSkills || []); 
             this.coins = progress.coins || 0;
             this.level = progress.level || 1;
 
@@ -435,7 +469,7 @@ class FullstackRoadmap {
         if (confirm('Tem certeza que deseja resetar todo o progresso?')) {
             this.currentStage = 0;
             this.completedStages.clear();
-            this.coins = 0;
+            this.completedSkills.clear(); 
             this.level = 1;
 
             localStorage.removeItem('fullstackProgress');
@@ -446,20 +480,21 @@ class FullstackRoadmap {
     }
 }
 
-// Inicializar o jogo quando a página carregar
+
 document.addEventListener('DOMContentLoaded', () => {
     const game = new FullstackRoadmap();
 
-    // Adicionar botão de reset (Easter egg - duplo clique no título)
+   
     const title = document.querySelector('.game-title');
-    title.addEventListener('dblclick', () => {
-        game.resetProgress();
-    });
+    if (title) { 
+        title.addEventListener('dblclick', () => {
+            game.resetProgress();
+        });
+    }
 
-    // Adicionar efeitos sonoros visuais
+    
     document.addEventListener('click', (e) => {
         if (e.target.closest('.stage:not(.locked)')) {
-            // Efeito visual de clique
             const ripple = document.createElement('div');
             ripple.style.cssText = `
                 position: absolute;
@@ -483,9 +518,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Adicionar animação de ripple
+
 const style = document.createElement('style');
 style.textContent = `
+    .skill-item {
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+    .skill-item:hover {
+        background: #e9ecef !important;
+    }
+    .completed-skill {
+        text-decoration: line-through;
+        color: #999;
+    }
+
     @keyframes ripple {
         to {
             transform: scale(4);
